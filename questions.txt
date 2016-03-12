@@ -1,0 +1,3 @@
+Why does $ npm start    and $ nodemon start  work when I try to go to localhost:3000, but
+$ nodemon app.js  does NOT work?
+

@@ -1,0 +1,26 @@
+body {
+  padding: 5px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.button {
+  padding: 5px;
+  background-color: green;
+  border-radius: 8px;
+}
+
+.challenge {
+  background-color: #d3d3d3;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+  width: 40%;
+}
+
+.headLine {
+  text-align: center;
+}
