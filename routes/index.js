@@ -28,10 +28,56 @@ MongoClient.connect('mongodb://localhost:27017/startupinacar', function(err, db)
 
   router.get("/challenge/:challengeId", function(req, res) {
 
-    var challengeId = parseInt(req.params.challengeId);
-    
-    res.render("challenge");
+    var challengeId = req.params.challengeId;
+
+    var mongo = require('mongodb');
+    var o_id = new mongo.ObjectID(challengeId);
+    db.collection('challenges').find({'_id': o_id}).toArray(function(err, docs){
+      res.render("challenge", {
+        challenge: docs[0] 
+      });
+    });
+
+  
   });
+
+  router.get("/register", function(req, res) {
+    res.render("register");
+  });
+
+  router.post("/register", function(req, res, next) {
+    var UserManagement = require('user-management');
+ 
+    var USERNAME = req.body.userName;
+    var PASSWORD = req.body.password;
+    var EXTRAS   = {
+      email: req.body.email
+    }
+ 
+    var users = new UserManagement({'database': 'startupinacar' });
+    users.load(function(err) {
+      console.log('Checking if the user exists');
+      users.userExists(USERNAME, function(err, exists) {
+        if (exists) {
+          console.log('  User already exists');
+          users.close();
+        } else {
+          console.log('  User does not exist');
+          console.log('Creating the user');
+          users.createUser(USERNAME, PASSWORD, EXTRAS, function (err) {
+            console.log('  User created');
+            users.close();
+          });
+        }
+      });
+    });
+
+    next();
+  }, function(req, res){
+    res.render("register");
+  });
+
+
 });
 
 module.exports = router;

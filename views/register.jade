@@ -1,0 +1,12 @@
+extends layout
+
+block content
+  h1.headLine Sign Up!
+  form(action="/register" method="post")
+    input(type="text" name="userName")
+    label UserName
+    input(type="email" name="email")
+    label email
+    input(type="text" name="password")
+    label password
+    button(type="submit") SubmitTheButton

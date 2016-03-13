@@ -1,5 +1,4 @@
 body {
-  padding: 5px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
@@ -23,4 +22,23 @@ a {
 
 .headLine {
   text-align: center;
+}
+
+
+nav {
+  overflow: hidden;
+  background-color: red;
+  margin: 0;
+}
+
+nav ul li {
+  display: inline-block;
+  list-style-type: none;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+nav > ul > li > a {
+  color: #aaa;
+  background-color: #ff0;
 }
