@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  h1.headLine Submit a Challenge!
+  if errors
+    ul
+      for error in errors
+        li!= error
+  form(action="/addChallenge" method="post")
+    label Title
+    input(type="text" name="title")
+    br
+    label Description
+    input(type="text" name="description")
+    br
+    label Points
+    input(type="text" name="points")
+    br
+    label Difficulty
+    input(type="text" name="difficulty")
+    br
+    label External Link (optional, CodePen, jsFiddle etc...)
+    input(type="text" name="outsideLink")
+    br
+    br
+    button(type="submit") SubmitTheButton

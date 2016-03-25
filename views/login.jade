@@ -2,15 +2,13 @@ extends layout
 
 block content
   h1.headLine Log In!
-  if errors
-    ul
-      for error in errors
-        li!= error.msg
+  if error
+    p ERROR: #{error}
   form(action="/login" method="post")
-    label UserName
-    input(type="text" name="userName")
+    label Email
+    input(type="text" name="email" required=true)
     br
     label password
-    input(type="password" name="password")
+    input(type="password" name="password", required=true)
     br
     button(type="submit") SubmitTheButton

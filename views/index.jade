@@ -2,7 +2,7 @@ extends layout
 
 block content
   h1.headLine= title
-  a(href="google.com").button Submit a Challenge
+  a(href="/addChallenge").button Submit a Challenge
 
   each challenge, i in challenges
     div.challenge #{challenge.title} Difficulty: #{challenge.difficulty}
