@@ -4,5 +4,8 @@ block content
   h1.headLine= challenge.title
   p Difficulty: #{challenge.difficulty} Points: #{challenge.points}
   p= challenge.description
-  label(for="challenge1") Mark as Solved!
-  input( type="checkbox" id="challenge1" name="challenge" )
+  form(action="/submitChallenge" method="post")
+    label(for="challenge1") Mark as Solved!
+    input( type="checkbox" id="challenge" name="challenge" value="#{challenge._id}" )
+    br
+    button(type="submit") Submit
