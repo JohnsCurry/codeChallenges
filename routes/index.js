@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var bcrypt = require('bcryptjs');
 var flash = require('connect-flash'); // remove flash?
 var app = express();
+var pg = require('pg');
 //var MongoClient = require('mongodb').MongoClient;
 var mongoose = require('mongoose');
 var server;
@@ -19,34 +20,9 @@ var ChallengeModel = require('./../challenge_model.js');
 
 mongoose.connect('mongodb://localhost:27017/startupinacar');
 
+var connectionString = "postgres://localhost:5432/startupinacar";
+
 var Schema = mongoose.Schema, ObjectId = Schema.ObjectId;
-/*var UserSchema = mongoose.Schema({
-  id: ObjectId,
-  userName: {type: String, required: true },
-  email: {type: String, unique: true },
-  password: {type: String, required: true},
-  solvedChallenges: []
-});*/
-//var UserModel = mongoose.model('User', UserSchema);
-/*
-var User = mongoose.model('User', new Schema({
-  id: ObjectId,
-  userName: String,
-  email: {type: String, unique: true },
-  password: String,
-  solvedChallenges: []
-}));
-*/
-/*
-var user = new Schema({
-  username: String,
-  password: String,
-  passwordSalt: String,
-  extras: {
-    email: String
-  }
-});
-*/
 
 var start = exports.start = function start(port, callback){
   server = app.listen(port, callback);
@@ -80,19 +56,30 @@ router.use(sessions({
 }));
 
 router.use(function(req, res, next){
+  console.log("In router.use thing");
   if (req.session && req.session.user){
-    UserModel.findOne({email: req.session.user.email}, function(err, user){
-      if (user) {
-        req.user = user;
-        delete req.user.password;
-        req.session.user = user;
-        res.locals.user = user;
-      }
-      next();
-    });
-  } else {
-    next();
+    req.user = req.session.user;
+    delete req.user.password;
+    res.locals.user = req.user;
   }
+    //pg.connect(connectionString, function(err, client, done){
+      //    req.user = result.rows[0];
+      //    delete req.user.password;
+      //    req.session.user = result.rows[0];
+      //    res.locals.user = result.rows[0];
+      //  }
+      //});
+    //});
+    //UserModel.findOne({email: req.session.user.email}, function(err, user){
+    //  if (user) {
+    //    req.session.user = user;
+    //    res.locals.user = user;
+    //  }
+    //  next();
+    //});
+//  } else {
+    next();
+//  }
 });
 
 function requireLogin(req, res, next){
@@ -128,9 +115,10 @@ app.use(function(req, res, next){
   var challenges = new ChallengeDAO();
   var users = new UserDAO();
 
-  challenges.getChallenges(function(challengeItems){
+  challenges.getChallenges('', function(challengeItems){
 
     router.get('/', function(req, res) {
+
       res.render('index', {
         title: 'Code Challenges',
         challenges: challengeItems
@@ -159,16 +147,18 @@ app.use(function(req, res, next){
     });
   });
 
+   
   router.get('/account', requireLogin, function(req, res, next) {
     res.render('account');
   });
 
   router.get("/challenge/:challengeId", requireLogin, function(req, res) {
+    var checkedValue;
 
     var challengeId = req.params.challengeId;
 
     var isSolved = function(challengeId, callback){
-      console.log("in the aggregation: ", challengeId);
+      //console.log("in the aggregation: ", challengeId);
       UserModel.aggregate([
     //var isSolved = User.aggregate([
         { $match: {"solvedChallenges": { "challenge": challengeId } } },
@@ -187,19 +177,23 @@ app.use(function(req, res, next){
       if (err) {
         console.log("There was an error");
       } else {
-        console.log("this is the result: ", results);
+        if (results.length >= 1 ){
+          checkedValue = true;
+        } else {
+          checkedValue = false;
+        }
+        
+        console.log("checkedValue is: ", checkedValue );
+        var mongo = require('mongodb');
+        var o_id = new mongo.ObjectID(challengeId);
+        ChallengeModel.find({'_id': o_id}, function(err, docs) {
+          //console.log(docs);
+          res.render('challenge', {
+            challenge: docs[0],
+            checkedValue: checkedValue
+          });
+        });
       }
-    });
-
-    //console.log("is solved is: ", isSolved(challengeId));
-
-    var mongo = require('mongodb');
-    var o_id = new mongo.ObjectID(challengeId);
-    ChallengeModel.find({'_id': o_id}, function(err, docs) {
-      //console.log(docs);
-      res.render('challenge', {
-        challenge: docs[0]
-      });
     });
   
   });
@@ -221,30 +215,13 @@ app.use(function(req, res, next){
 
   router.post('/login', function(req, res){
     
-    /*users.login(req.body.email, req.body.password, function(msg, user){
-      if (msg === "match") {
-
-        //req.session.user = user;
-        //res.redirect('account');
+    users.login(req.body.email, req.body.password, function(user){
+      if (bcrypt.compareSync(req.body.password, user.password)){
+        req.session.user = user;
+        res.redirect('account');
       } else {
-        console.log("User param is this: ", user);
-        res.render('login', {error: "Invalid Email or Password"});
-      }
-    });*/
-    UserModel.findOne({email: req.body.email}, function(err, user){
-      if(!user){
-        console.log("!user");
-        res.render('login', {error: 'Invalid Email or Password'});
-      } else {
-        console.log("else user...");
-        if (bcrypt.compareSync(req.body.password, user.password)){
-          console.log("password match");
-          req.session.user = user; // set-cookie: session= {email, password, etc...} info stored in session
-          res.redirect('account');
-        } else {
-          console.log("no match!");
-          res.render('login', {error: "Invalid Email or Password"});
-        }
+        console.log("password did not match");
+        res.render('login', {error: "You entered an invalid email or password"});
       }
     });
   });
@@ -261,35 +238,20 @@ app.use(function(req, res, next){
         res.render('register', {error: "error"});
       }
     });
-
-    //console.log(req.body.userName);
-    //var hash = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
-    /*var user = new User({
-      userName: req.body.userName,
-      password: hash,
-      email: req.body.email
-    });
-*//*
-    user.save(function(err){
-      if(err){
-        var err = "Something bad happened!";
-        if (err.code === 11000){
-          var error = 'that email is already taken';
-        }
-        res.render('register', {error: error});
-      } else {
-        res.redirect('/');
-      }
-    }) */
   });
 
   router.post("/submitChallenge", function(req, res, next){
-    console.log("request.body: ", req.body);
-    console.log("req.user", req.user);
-    User.findOne({email: req.user.email}, function(err, doc){
-      doc.solvedChallenges.push(req.body);
-      doc.save();
+    //console.log("request.body: ", req.body);
+    var query = {_id: req.body.challenge};
+
+    challenges.getChallenges(query, function(challengeItem){
+      console.log("in index.js challengeItem: ", challengeItem);
+      UserModel.findOne({email: req.user.email}, function(err, doc){
+        doc.solvedChallenges.addToSet(challengeItem);
+        doc.save();
+      });
     });
+    //console.log("req.user", req.user);
 
     res.redirect("/");
   });

@@ -1,4 +1,6 @@
+var pg = require('pg');
 
+var connectionString = "postgres://localhost:5432/startupinacar";
 
 var mongoose = require('mongoose');
 var bcrypt = require('bcryptjs');
@@ -9,44 +11,50 @@ var UserModel = require('./user_model.js');
 
 //mongoose.connect('mongodb://localhost:27017/startupinacar');
 var Schema = mongoose.Schema, ObjectId = Schema.ObjectId;
-/*
-var UserSchema = mongoose.Schema({
-  id: ObjectId,
-  userName: {type: String, required: true },
-  email: {type: String, unique: true },
-  password: {type: String, required: true},
-  solvedChallenges: []
-})*/
 
-//var UserModel = mongoose.model('User', UserSchema);
 
 function UserDAO(database){
   this.db = database;
 
   this.addUser = function(userName, password, email, callback){
-    var User = new UserModel({
-      userName: userName,
-      password: password,
-      email: email
-    });
+    
 
-    User.save(function(err){
-      if(err){
-        var err = "Something bad happened!";
-        if (err.code === 11000){
-          var error = 'that email is already taken';
-        }
-        callback("error");
-        //res.render('register', {error: error});
-      } else {
-        callback("good");
-        //res.redirect('/');
+    pg.connect(connectionString, function(err, client, done){
+      if (err){
+        console.log(err);
+        return console.log("error fetching client from pool");//, err);
       }
-    })
+      client.query("INSERT INTO users (first_name, password, email) VALUES ($1, $2, $3)", [userName, password, email], function(err, result){
+        if (err){
+          console.log("err: ", err);
+          callback(err)
+        } else {
+          callback("good");
+        }
+      });
+    });
   }
 
   this.login = function(email, passwordAttempt, callback){
-    UserModel.findOne({email: email}, function(err, user){
+
+    console.log("email: ", email, "passwordAttempt: ", passwordAttempt);
+
+    pg.connect(connectionString, function(err, client, done){
+      if (err){
+        console.log(err);
+        return console.log("error fetching client from pool");//, err);
+      }
+      client.query("SELECT * FROM users WHERE email = $1", [email], function(err, result){
+        if (err){
+          console.log("err: ", err);
+          callback(err)
+        } else {
+          callback(result.rows[0]);
+        }
+      });
+    });
+
+    /*UserModel.findOne({email: email}, function(err, user){
       console.log("User from the users.js file", user);
       if(!user){
         console.log("!user");
@@ -62,7 +70,7 @@ function UserDAO(database){
           //res.render('login', {error: "Invalid Email or Password"});
         }
       }
-    });
+    });*/
   }
 
 }

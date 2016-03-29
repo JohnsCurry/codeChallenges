@@ -1,3 +1,9 @@
+var pg = require('pg');
+
+var connectionString = "postgres://localhost:5432/startupinacar";
+
+
+
 var mongoose = require('mongoose');
 //mongoose.connect('mongodb://localhost:27017/startupinacar');
 var Schema = mongoose.Schema, ObjectId = Schema.ObjectId;
@@ -22,49 +28,45 @@ var ChallengeSchema = mongoose.Schema({
 function ChallengeDAO(database){
   this.db = database;
 
-  this.getChallenges = function(callback){
-    ChallengeModel.find({}, function (err, docs) {
+  this.getChallenges = function(query, callback){
+    pg.connect(connectionString, function(err, client, done) {
+      if (err) {
+        console.log(err);
+        return console.log("error fetching client from pool", err);//res.status(500).json({ success: false, data: err});
+      }
+      client.query("SELECT * FROM challenges;", function(err, result){
+        done();
+
+        if(err) {
+          return console.log('error running query');//, err);
+        }
+          callback(result.rows);
+      });
+    });
+  }
+
+  this.getSolvedChallenges = function(callback){
+    ChallengeModel.find({}, function(err, docs){
       callback(docs);
     });
   }
 
   this.addChallenge = function(title, description, points, difficulty, outsideLink, callback){
     //router.post('/addChallenge', function(req, res, next) {
-
-    var ChallengeDoc = new ChallengeModel({
-      title: title,
-      description: description,
-      points: points,
-      difficulty: difficulty,
-      outsideLink: outsideLink
-    });
-
-    ChallengeDoc.save(function (err, challengeDoc){
-      if (err) {
-        for (var errProp in err.errors){
-          console.log("err.errors." + errProp + ".message" + " ... " + err.errors[errProp]);
-          console.log("This is the error", err.errors[errProp]);
-          callback("error");
-        }
-        //res.render('addChallenge', {errors: err.errors});
-      } else {
-        console.log("everything is good");
-        callback("good");
+    pg.connect(connectionString, function(err, client, done){
+      if (err){
+        console.log(err);
+        return console.log("error fetching client from pool");//, err);
       }
-    });
-    //res.redirect('/');
-  
-  /*challengeDoc.save(function (err, challengeDoc){
-      if (err) {
-        for (var errProp in err.errors){
-          console.log("err.errors." + errProp + ".message" + " ... " + err.errors[errProp]);
-          //console.log("This is the error", err.errors[errProp]);
+      client.query("INSERT INTO challenges (title, description, points, difficulty, outsideLink) VALUES ($1, $2, $3, $4, $5)", [title, description, points, difficulty, outsideLink], function(err, result){
+        if (err){
+          console.log("err: ", err);
+          callback(err)
+        } else {
+          callback("good");
         }
-        res.render('addChallenge', {errors: err.errors});
-      } else {
-        console.log("everything is good");
-      }
-    });*/
+      });
+    });
   };
 
   this.isSolved = function(){
