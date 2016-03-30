@@ -119,13 +119,52 @@ app.use(function(req, res, next){
 
     router.get('/', function(req, res) {
 
+      if (req.session && req.session.user){
+        console.log("I am here");
+        pg.connect(connectionString, function(err, client, done) {
+          console.log("made it into pg.connect");
+          if (err) {
+            console.log(err);
+            return console.log("error fetching client from pool", err);//res.status(500).json({ success: false, data: err});
+          } //if err
+          //SELECT challenges.title, challenges.description, challenges.challenge_id FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = 4;
+          client.query("SELECT challenges.challenge_id FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = $1;", [req.session.user.user_id], function(err, result){
+            //console.log("hi from inside query");
+            done();
+            console.log("These are the rows", result.rows);
+            var challengeIds = [];
+            for (var i = 0; i < result.rows.length; i++){
+              challengeIds.push(result.rows[i].challenge_id);
+            }
+            //console.log("challengeitems: ", challengeItems);
+            console.log("Rendering WITH WITH WITH the solved IDS");
+            res.render('index', {
+              title: 'Code Challenges',
+              challenges: challengeItems,
+              solvedIds: challengeIds
+            });// res.render
+            //var challengeIdString = challengeIds.join(", ");
+            //console.log("ChallengeIdString: ", challengeIdString);
+            //console.log("Where created: ", challengeIds);
+
+            if(err) {
+              return console.log('error running query');//, err);
+            } else {
+              //console.log("These are passed to account: ", result.rows);
+              //res.render('account', {solvedChallenges: result.rows});
+            } //if (err) else {}
+          }); //client.query()
+        }); // pg.connect
+      }; // if (req.session && req.session.user)
+      //console.log("ChallengeIdString: ", challengeIdString);
+      console.log("Rendering WITHOUT the solvedIds");
       res.render('index', {
         title: 'Code Challenges',
         challenges: challengeItems
-      });
-    });
+      });// res.render
+    }); //router.get
 
-  });
+  }); //challenges.getChallenges
 
   router.get('/addChallenge', function(req, res, next) {
     res.render('addChallenge');
@@ -149,51 +188,58 @@ app.use(function(req, res, next){
 
    
   router.get('/account', requireLogin, function(req, res, next) {
-    res.render('account');
+    pg.connect(connectionString, function(err, client, done) {
+      if (err) {
+        console.log(err);
+        return console.log("error fetching client from pool", err);//res.status(500).json({ success: false, data: err});
+      }
+      //SELECT challenges.title, challenges.description, challenges.challenge_id FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = 4;
+      client.query("SELECT challenges.title, challenges.challenge_id, challenges.difficulty FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = 4;", function(err, result){
+        done();
+
+        if(err) {
+          return console.log('error running query');//, err);
+        } else {
+          console.log("These are passed to account: ", result.rows);
+          res.render('account', {solvedChallenges: result.rows});
+        }
+      });
+    });
+    //res.render('account');
   });
 
   router.get("/challenge/:challengeId", requireLogin, function(req, res) {
-    var checkedValue;
+    //var checkedValue;
 
     var challengeId = req.params.challengeId;
+    console.log(req.params);
 
-    var isSolved = function(challengeId, callback){
-      //console.log("in the aggregation: ", challengeId);
-      UserModel.aggregate([
-    //var isSolved = User.aggregate([
-        { $match: {"solvedChallenges": { "challenge": challengeId } } },
-        { $project: {
-          userName: 1 }
-        }
-      ],
-      function(err, results){
-        //console.log("this is the result: ", results);
-        callback(err, results);
-        //return results;
-      });
-    };
-
-    isSolved(challengeId, function(err, results){
+    pg.connect(connectionString, function(err, client, done) {
       if (err) {
-        console.log("There was an error");
-      } else {
-        if (results.length >= 1 ){
-          checkedValue = true;
-        } else {
-          checkedValue = false;
-        }
-        
-        console.log("checkedValue is: ", checkedValue );
-        var mongo = require('mongodb');
-        var o_id = new mongo.ObjectID(challengeId);
-        ChallengeModel.find({'_id': o_id}, function(err, docs) {
-          //console.log(docs);
-          res.render('challenge', {
-            challenge: docs[0],
-            checkedValue: checkedValue
-          });
-        });
+        console.log(err);
+        return console.log("error fetching client from pool", err);//res.status(500).json({ success: false, data: err});
       }
+      //SELECT challenges.title, challenges.description, challenges.challenge_id FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = 4;
+      client.query("SELECT * FROM challenges WHERE challenge_id = $1;", [challengeId], function(err, result){
+        done();
+
+        if(err) {
+          return console.log('error running query');//, err);
+        } else {
+          client.query("SELECT * FROM user_challenges WHERE user_id = $1 AND challenge_id = $2", [req.session.user.user_id, challengeId], function(err, isSolved){
+            var solvedBool;
+            if (isSolved.rows.length === 0){
+              solvedBool = false;
+            } else {
+              solvedBool = true;
+            }
+            res.render('challenge', {
+              challenge: result.rows[0],
+              solvedBool: solvedBool
+            });
+          });
+        }
+      });
     });
   
   });
@@ -242,15 +288,33 @@ app.use(function(req, res, next){
 
   router.post("/submitChallenge", function(req, res, next){
     //console.log("request.body: ", req.body);
-    var query = {_id: req.body.challenge};
+    //var query = {_id: req.body.challenge};
+    //console.log("query is: ", query);
 
-    challenges.getChallenges(query, function(challengeItem){
-      console.log("in index.js challengeItem: ", challengeItem);
-      UserModel.findOne({email: req.user.email}, function(err, doc){
-        doc.solvedChallenges.addToSet(challengeItem);
-        doc.save();
+    pg.connect(connectionString, function(err, client, done) {
+      if (err) {
+        console.log(err);
+        return console.log("error fetching client from pool", err);//res.status(500).json({ success: false, data: err});
+      }
+      //SELECT challenges.title, challenges.description, challenges.challenge_id FROM user_challenges INNER JOIN challenges ON user_challenges.challenge_id = challenges.challenge_id WHERE user_id = 4;
+      client.query("INSERT INTO user_challenges (user_id, challenge_id) VALUES ($1, $2)", [req.session.user.user_id, req.body.challenge], function(err, result){
+        done();
+
+        if(err) {
+          return console.log('error running query');//, err);
+        } else {
+          res.render('/');
+        }
       });
     });
+
+    //challenges.getChallenges(query, function(challengeItem){
+      //console.log("in index.js challengeItem: ", challengeItem);
+      //UserModel.findOne({email: req.user.email}, function(err, doc){
+      //  doc.solvedChallenges.addToSet(challengeItem);
+      //  doc.save();
+      //});
+    //});
     //console.log("req.user", req.user);
 
     res.redirect("/");

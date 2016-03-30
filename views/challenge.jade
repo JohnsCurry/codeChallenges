@@ -4,8 +4,11 @@ block content
   h1.headLine= challenge.title
   p Difficulty: #{challenge.difficulty} Points: #{challenge.points}
   p= challenge.description
-  form(action="/submitChallenge" method="post")
-    label(for="challenge1") Mark as Solved!
-    input( type="checkbox" id="challenge" name="challenge" value="#{challenge._id}" )
-    p
-    button(type="submit") Submit
+  if !solvedBool
+    form(action="/submitChallenge" method="post")
+      label(for="challenge1") Mark as Solved!
+      input( type="checkbox" id="challenge" name="challenge" value="#{challenge.challenge_id}" )
+      p
+      button(type="submit") Submit
+  else
+    p Solved!

@@ -1,9 +1,11 @@
 extends layout
 
 block content
+  - function inArray(arr, val){ return arr.indexOf(1) !== -1; }
   h1.headLine= title
   a(href="/addChallenge").button Submit a Challenge
 
   each challenge, i in challenges
+    //if inArray( solvedIds, challenge.challenge_id)
     div.challenge #{challenge.title} Difficulty: #{challenge.difficulty}
-    a(href="/challenge/#{challenge._id}") #{challenge.title}
+    a(href="/challenge/#{challenge.challenge_id}") #{challenge.title}
