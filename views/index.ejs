@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+
+<%
+
+var contains = function(needle) {
+    // Per spec, the way to identify NaN is that it is not equal to itself
+    var findNaN = needle !== needle;
+    var indexOf;
+
+    if(!findNaN && typeof Array.prototype.indexOf === 'function') {
+        indexOf = Array.prototype.indexOf;
+    } else {
+        indexOf = function(needle) {
+            var i = -1, index = -1;
+
+            for(i = 0; i < this.length; i++) {
+                var item = this[i];
+
+                if((findNaN && item !== item) || item === needle) {
+                    index = i;
+                    break;
+                }
+            }
+
+            return index;
+        };
+    }
+
+    return indexOf.call(this, needle) > -1;
+}; %>
+
+
+
+<html lang="en">
+  <head>
+    <% include ./partials/head %>
+  </head>
+  <body>
+    <header>
+      <% include ./partials/header %>
+    </header>
+
+    <h1 style="text-align: center;"><%= title %> </h1>
+      <% challenges.forEach(function(challenge){ %>
+      
+      <div class="well"   <% if (  contains.call(solvedArray, challenge.challenge_id)   ) { %> style='background: #72f751;'    <% } %>        ><a href="/challenge/<%= challenge.challenge_id %>"><strong><%= challenge.title %></strong></a><br><strong>Difficulty:</strong> <%= challenge.difficulty %>
+      </div>
+      <% }) %>
+  </body>
+</html>

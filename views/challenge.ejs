@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <% include ./partials/head %>
+    <link rel="stylesheet" type="text/css" href="/codemirror/lib/codemirror.css">
+  </head>
+  <body>
+    <header>
+      <% include ./partials/header %>
+    </header>
+
+    <h1 class="headline"><%= challenge.title %></h1>
+
+    <p>Difficulty: <%= challenge.difficulty %> Points: <%= challenge.points %></p>
+    <p><%= challenge.description %></p>
+    
+    <form id="code-form" method="POST" action="">
+      <label>HTML Code</label><br>
+      <textarea class="html-textarea" name="html-input" id="html-input"></textarea><br>
+      <label>Javascript Code</label><br>
+      <textarea class="js-textarea" name="js-input" id="js-input"></textarea><br>
+      <input type="submit" name="preview-form-submit" id="preview-form-submit" value="Run">
+    </form>
+
+    <div id="iframeLocation">
+      <iframe height="500px;" width="80%;" src="/iframe/<%= challenge.challenge_id%>"></iframe>
+    </div>
+    <% if (!solvedBool) { %>
+    <form action="/completeChallenge" method="POST">
+      <label for="challenge1">Mark as Solved!</label>
+      <input type="checkbox" id="challenge" name="challenge" value="<%= challenge.challenge_id %>">
+      <button type="submit">Submit</button>
+    </form>
+    <% } else { %>
+    <h3>This challenge is solved!</h3>
+    <form action="/unSolve" method="POST">
+      <label for="challenge1">Unsolve & Reset</label>
+      <input type="checkbox" id="challenge" name="challenge" value="<%= challenge.challenge_id %>">
+      <button type="submit">Submit</button>
+    </form>
+    <% } %>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script type="text/javascript" src="/codemirror/lib/codemirror.js"></script>
+    <script type="text/javascript">
+    
+     
+$(document).ready(function(){
+  var html = $(".html-textarea")[0];
+  var htmlEditor = CodeMirror.fromTextArea(html, {
+    lineNumbers : true,
+    mode: "javascript"
+  });
+
+  var js = $(".js-textarea")[0];
+  var jsEditor = CodeMirror.fromTextArea(js, {
+    lineNumbers : true,
+    mode: "javascript"
+  });
+
+  //when form submitted
+  $("#preview-form-submit").click(function(e){
+    e.preventDefault();
+    htmlValue = htmlEditor.getValue();
+    jsValue   = jsEditor.getValue();
+
+
+    $.post( '/iframe', {
+      htmlValue: htmlValue,
+      jsValue: jsValue
+    },
+    function(data){
+      console.log("data from callback: ", data);
+      //data.jsValue;
+      $('#iframeLocation').html('<iframe height="500px" width="80%" src="/iframe/<%= challenge.challenge_id%>"></iframe>');
+    });
+
+  });
+  
+
+});
+
+
+
+
+    </script>
+  </body>
+</html>

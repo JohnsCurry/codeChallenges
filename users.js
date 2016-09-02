@@ -2,19 +2,11 @@ var pg = require('pg');
 
 var connectionString = "postgres://localhost:5432/startupinacar";
 
-var mongoose = require('mongoose');
 var bcrypt = require('bcryptjs');
 var sessions = require('client-sessions');
-var UserModel = require('./user_model.js');
 
 
-
-//mongoose.connect('mongodb://localhost:27017/startupinacar');
-var Schema = mongoose.Schema, ObjectId = Schema.ObjectId;
-
-
-function UserDAO(database){
-  this.db = database;
+function UserDAO(){
 
   this.addUser = function(userName, password, email, callback){
     
@@ -54,23 +46,6 @@ function UserDAO(database){
       });
     });
 
-    /*UserModel.findOne({email: email}, function(err, user){
-      console.log("User from the users.js file", user);
-      if(!user){
-        console.log("!user");
-        //res.render('login', {error: 'Invalid Email or Password'});
-      } else {
-        if (bcrypt.compareSync(passwordAttempt, user.password)){
-          console.log("password match");
-          //req.session.user = user; // set-cookie: session= {email, password, etc...} info stored in session
-          //res.redirect('account');
-          callback(user);//, user);
-        } else {
-          console.log("no match!");
-          //res.render('login', {error: "Invalid Email or Password"});
-        }
-      }
-    });*/
   }
 
 }

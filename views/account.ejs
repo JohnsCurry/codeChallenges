@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <% include ./partials/head %>
+  </head>
+  <body>
+    <header>
+      <% include ./partials/header %>
+    </header>
+
+    <h1 style="text-align: center;">Your Account</h1>
+
+    <h2>User Information</h2>
+
+    <p>Email: <%= user.email %></p>
+    <p>Data: <%= user.data %></p>
+    <p>Solved Challenges: </p>
+    <% for (var i = 0; i < solvedChallenges.length; i++) { %>
+      <div class="well"><%= solvedChallenges[i].title %> Difficulty: <%= solvedChallenges[i].difficulty %>
+        <a href="/challenge/<%= solvedChallenges[i].challenge_id %>"><%= solvedChallenges[i].title %></a>
+      </div>
+    <% } %>
+
+  </body>
+</html>

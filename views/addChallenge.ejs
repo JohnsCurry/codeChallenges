@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <% include ./partials/head %>
+  </head>
+  <body>
+    <header>
+      <% include ./partials/header %>
+    </header>
+
+    <h1 style="text-align: center;">Submit a Challenge</h1>
+
+    <form action="/addChallenge" method="post">
+      <label>Title</label>
+      <input type="text" name="title">
+      <br>
+      <label>Description</label>
+      <input type="text" name="description">
+      <br>
+      <label>Points</label>
+      <input type="text" name="points">
+      <br>
+      <label>Difficulty</label>
+      <input type="text" name="difficulty">
+      <br>
+      <label>External Link (optional, CodePen, jsFiddle etc...)</label>
+      <input type="text" name="outsideLink">
+      <br>
+      <br>
+      <button type="submit" value="Submit">Submit</button>
+
+  </body>
+</html>
